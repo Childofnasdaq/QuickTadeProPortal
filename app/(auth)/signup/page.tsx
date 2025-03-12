@@ -2,17 +2,17 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 
 export default function SignupPage() {
-  const { signup } = useAuth()
+  const { signup, user, isLoading: authLoading } = useAuth()
   const router = useRouter()
 
   const [formData, setFormData] = useState({
@@ -27,6 +27,13 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard")
+    }
+  }, [user, router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -73,6 +80,15 @@ export default function SignupPage() {
     }
 
     setIsLoading(false)
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+        <p className="mt-4 text-red-400">Loading...</p>
+      </div>
+    )
   }
 
   return (
@@ -168,7 +184,14 @@ export default function SignupPage() {
               </div>
 
               <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 text-white" disabled={isLoading}>
-                {isLoading ? "Registering..." : "Register"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Registering...
+                  </>
+                ) : (
+                  "Register"
+                )}
               </Button>
             </form>
 
