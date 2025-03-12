@@ -2,173 +2,122 @@
 
 import type React from "react"
 
-import { createContext, useContext, useEffect, useState } from "react"
 import {
-  type User as FirebaseUser,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile,
+  updateProfile as updateUserProfile,
+  type User,
 } from "firebase/auth"
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore"
+import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"
+import { createContext, useContext, useEffect, useState } from "react"
 import { auth, db } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
-import { generateMentorId } from "@/lib/utils"
-import type { User } from "@/lib/types"
+import ClientOnly from "./client-only"
 
-// Define the auth context type
 type AuthContextType = {
   user: User | null
-  firebaseUser: FirebaseUser | null
+  loading: boolean
   login: (email: string, password: string) => Promise<boolean>
-  signup: (
-    userData: Omit<User, "id" | "mentorId"> & { password: string },
-  ) => Promise<{ success: boolean; error: string | null }>
-  logout: () => void
-  updateProfile: (userData: Partial<User>) => Promise<boolean>
-  isLoading: boolean
+  signup: (data: any) => Promise<{ success: boolean; error?: string }>
+  logout: () => Promise<void>
+  updateProfile: (data: any) => Promise<boolean>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  login: async () => false,
+  signup: async () => ({ success: false }),
+  logout: async () => {},
+  updateProfile: async () => false,
+})
+
+export const useAuth = () => useContext(AuthContext)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false)
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null)
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  // Set mounted state to true after component mounts
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
-      setFirebaseUser(authUser)
-
-      if (authUser) {
-        try {
-          // Get user data from Firestore
-          const userDoc = await getDoc(doc(db, "users", authUser.uid))
-
-          if (userDoc.exists()) {
-            const userData = userDoc.data() as User
-            setUser({
-              id: authUser.uid,
-              email: authUser.email || "",
-              name: userData.name || "",
-              displayName: userData.displayName || "",
-              phone: userData.phone || "",
-              mentorId: userData.mentorId,
-              avatar: userData.avatar,
-            })
-          } else {
-            // If user document doesn't exist in Firestore yet
-            setUser({
-              id: authUser.uid,
-              email: authUser.email || "",
-              name: authUser.displayName || "",
-              displayName: authUser.displayName || "",
-              phone: "",
-              mentorId: generateMentorId(),
-              avatar: "",
-            })
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error)
-        }
-      } else {
-        setUser(null)
-      }
-
-      setIsLoading(false)
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user)
+      setLoading(false)
     })
 
     return () => unsubscribe()
   }, [])
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true)
+  // Login function
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-
-      // User is automatically set by the auth state listener
-      setIsLoading(false)
-      router.push("/dashboard")
+      await signInWithEmailAndPassword(auth, email, password)
       return true
     } catch (error) {
       console.error("Login error:", error)
-      setIsLoading(false)
       return false
     }
   }
 
-  const signup = async (userData: Omit<User, "id" | "mentorId"> & { password: string }) => {
-    setIsLoading(true)
+  // Signup function
+  const signup = async (data: any): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password)
-      const firebaseUser = userCredential.user
-
-      // Update display name
-      await updateProfile(firebaseUser, {
-        displayName: userData.displayName,
-      })
-
       // Generate mentor ID
-      const mentorId = generateMentorId()
+      const mentorId = Math.floor(1000 + Math.random() * 9000).toString()
+
+      // Create user with email and password
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password)
+      const newUser = userCredential.user
+
+      // Update profile
+      await updateUserProfile(newUser, {
+        displayName: data.displayName || data.name,
+      })
 
       // Create user document in Firestore
-      await setDoc(doc(db, "users", firebaseUser.uid), {
-        id: firebaseUser.uid,
-        email: userData.email,
-        name: userData.name,
-        displayName: userData.displayName,
-        phone: userData.phone || "",
-        mentorId: mentorId,
-        avatar: userData.avatar || "",
+      await setDoc(doc(db, "users", newUser.uid), {
+        uid: newUser.uid,
+        email: data.email,
+        fullName: data.name,
+        displayName: data.displayName,
+        phone: data.phone || "",
+        mentorId,
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        role: "user",
+        isActive: true,
       })
 
-      // User is automatically set by the auth state listener
-      setIsLoading(false)
-      router.push("/login")
-
-      return { success: true, error: null }
+      return { success: true }
     } catch (error: any) {
       console.error("Signup error:", error)
-      setIsLoading(false)
-      return { success: false, error: error.message || "Registration failed" }
+      return { success: false, error: error.message }
     }
   }
 
-  const updateUserProfile = async (userData: Partial<User>) => {
-    if (!firebaseUser || !user) return false
+  // Logout function
+  const logout = async (): Promise<void> => {
+    try {
+      await signOut(auth)
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
+
+  // Update profile function
+  const updateProfile = async (data: any): Promise<boolean> => {
+    if (!user) return false
 
     try {
-      // Update display name in Firebase Auth if provided
-      if (userData.displayName) {
-        await updateProfile(firebaseUser, {
-          displayName: userData.displayName,
-        })
-      }
-
-      // Update user document in Firestore
-      const userRef = doc(db, "users", firebaseUser.uid)
-      await setDoc(
-        userRef,
-        {
-          ...userData,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true },
-      )
-
-      // Update local state
-      setUser({ ...user, ...userData })
+      // Update Firestore document
+      const userRef = doc(db, "users", user.uid)
+      await updateDoc(userRef, {
+        ...data,
+        updatedAt: serverTimestamp(),
+      })
 
       return true
     } catch (error) {
@@ -177,40 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = () => {
-    signOut(auth)
-      .then(() => {
-        setUser(null)
-        router.push("/")
-      })
-      .catch((error) => {
-        console.error("Logout error:", error)
-      })
-  }
-
-  // Handle server-side rendering and client-side hydration
   return (
-    <AuthContext.Provider
-      value={{
-        user: mounted ? user : null,
-        firebaseUser: mounted ? firebaseUser : null,
-        login,
-        signup,
-        logout,
-        updateProfile: updateUserProfile,
-        isLoading: !mounted || isLoading,
-      }}
-    >
-      {children}
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateProfile }}>
+      <ClientOnly>{children}</ClientOnly>
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
 }
 
