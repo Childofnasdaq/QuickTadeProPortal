@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/components/auth-provider"
 import { Upload } from "lucide-react"
-import Image from "next/image"
 
 export default function ProfilePage() {
   const { user, updateProfile } = useAuth()
@@ -78,7 +77,7 @@ export default function ProfilePage() {
     fileInputRef.current?.click()
   }
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -93,23 +92,34 @@ export default function ProfilePage() {
       reader.readAsDataURL(file)
 
       // Resize and compress the image
-      const resizedImage = await resizeImage(file, 200, 200)
-
-      // Update the profile with the resized image
-      setIsLoading(true)
-      const success = await updateProfile({ avatar: resizedImage })
-
-      if (!success) {
-        setError("Failed to upload image. Please try a smaller image.")
-        setPreviewImage(user?.avatar || null)
-      }
-
-      setIsLoading(false)
+      resizeImage(file, 200, 200)
+        .then((resizedImage) => {
+          // Update the profile with the resized image
+          setIsLoading(true)
+          updateProfile({ avatar: resizedImage })
+            .then((success) => {
+              if (!success) {
+                setError("Failed to upload image. Please try a smaller image.")
+                setPreviewImage(user?.avatar || null)
+              }
+              setIsLoading(false)
+            })
+            .catch((err) => {
+              console.error("Error updating profile:", err)
+              setError("Failed to upload image. Please try again.")
+              setPreviewImage(user?.avatar || null)
+              setIsLoading(false)
+            })
+        })
+        .catch((err) => {
+          console.error("Error resizing image:", err)
+          setError("Failed to process image. Please try a smaller image.")
+          setPreviewImage(user?.avatar || null)
+        })
     } catch (error) {
       console.error("Error processing image:", error)
       setError("Failed to process image. Please try a smaller image.")
       setPreviewImage(user?.avatar || null)
-      setIsLoading(false)
     }
   }
 
@@ -117,7 +127,6 @@ export default function ProfilePage() {
   const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image()
-      img.src = URL.createObjectURL(file)
       img.onload = () => {
         const canvas = document.createElement("canvas")
         let width = img.width
@@ -148,13 +157,15 @@ export default function ProfilePage() {
         ctx.drawImage(img, 0, 0, width, height)
 
         // Convert to base64 with reduced quality
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.7)
-        URL.revokeObjectURL(img.src)
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.4) // Reduced quality to 40%
         resolve(dataUrl)
       }
+
       img.onerror = () => {
         reject(new Error("Failed to load image"))
       }
+
+      img.src = URL.createObjectURL(file)
     })
   }
 
@@ -193,7 +204,17 @@ export default function ProfilePage() {
                   <span className="text-sm">Choose File</span>
                 </div>
               )}
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageChange}
+                onClick={(e) => {
+                  // Reset the value to allow selecting the same file again
+                  ;(e.target as HTMLInputElement).value = ""
+                }}
+              />
             </div>
             <Button
               variant="outline"

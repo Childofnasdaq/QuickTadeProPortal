@@ -7,6 +7,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight, Star } from "lucide-react"
 import { FaWhatsapp, FaInstagram, FaFacebook, FaTiktok } from "react-icons/fa"
 import { LiveChat } from "@/components/live-chat"
+import { FaTelegram } from "react-icons/fa6"
+import { useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 const testimonials = [
   {
@@ -31,6 +41,8 @@ const testimonials = [
 ]
 
 export default function LandingPage() {
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -64,13 +76,11 @@ export default function LandingPage() {
                   <Link href="/login">Login</Link>
                 </Button>
                 <Button
-                  asChild
                   size="lg"
                   className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
+                  onClick={() => setPaymentDialogOpen(true)}
                 >
-                  <a href="#" download>
-                    Download App
-                  </a>
+                  Download App ($60)
                 </Button>
               </div>
             </div>
@@ -105,6 +115,47 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent className="bg-black border border-red-500 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-red-500 text-xl">Choose Payment Method</DialogTitle>
+            <DialogDescription className="text-red-300">Purchase QUICKTRADE PRO for $60 USD</DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="flex flex-col gap-4">
+              <Button asChild className="bg-[#0b2e82] hover:bg-[#0a2971] text-white font-bold">
+                <a
+                  href="https://www.payfast.co.za/eng/process?cmd=_paynow&receiver=27246195&item_name=QUICKTRADE+PRO&amount=60&return_url=https://childofnasdaqofficial.co.za/payment-success&cancel_url=https://childofnasdaqofficial.co.za/payment-cancel"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Pay with PayFast
+                </a>
+              </Button>
+
+              <Button
+                onClick={() => setPaymentDialogOpen(false)}
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold"
+              >
+                <Link href="/payment">Pay with Credit Card</Link>
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPaymentDialogOpen(false)}
+              className="border-red-500 text-red-400"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dashboard Preview Section */}
       <div className="py-20 bg-black">
@@ -199,7 +250,7 @@ export default function LandingPage() {
       <div className="py-20 bg-gradient-to-t from-black to-red-950/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-12 text-red-500 neon-text">Get in Touch</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8 max-w-4xl mx-auto">
             <a
               href="https://wa.me/27695347219"
               target="_blank"
@@ -229,7 +280,7 @@ export default function LandingPage() {
             </a>
 
             <a
-              href="https://facebook.com/QUICKPRO"
+              href="https://www.facebook.com/share/169smrWNJX/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 p-4 rounded-lg bg-black/50 border border-red-500/30 hover:border-red-500 transition-colors"
@@ -252,6 +303,20 @@ export default function LandingPage() {
               <div>
                 <p className="font-semibold text-red-400">TikTok</p>
                 <p className="text-sm text-gray-400">@QUICKTRADEPRO</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-red-500 ml-auto" />
+            </a>
+
+            <a
+              href="https://t.me/quicktradeproreportscammers"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-4 rounded-lg bg-black/50 border border-red-500/30 hover:border-red-500 transition-colors"
+            >
+              <FaTelegram className="w-6 h-6 text-red-500" />
+              <div>
+                <p className="font-semibold text-red-400">Telegram</p>
+                <p className="text-sm text-gray-400">Community</p>
               </div>
               <ChevronRight className="w-5 h-5 text-red-500 ml-auto" />
             </a>
@@ -289,7 +354,7 @@ export default function LandingPage() {
               <FaInstagram className="w-5 h-5" />
             </a>
             <a
-              href="https://facebook.com/QUICKPRO"
+              href="https://www.facebook.com/share/169smrWNJX/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-red-400 hover:text-red-300"
@@ -303,6 +368,14 @@ export default function LandingPage() {
               className="text-red-400 hover:text-red-300"
             >
               <FaTiktok className="w-5 h-5" />
+            </a>
+            <a
+              href="https://t.me/quicktradeproreportscammers"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300"
+            >
+              <FaTelegram className="w-5 h-5" />
             </a>
           </div>
         </div>
