@@ -120,8 +120,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [user])
 
   // Function to create a new EA
-  const createEA = async (name: string, description: string) => {
-    if (!user) return
+  const createEA = async (name: string, description = "") => {
+    if (!user) return null
 
     try {
       const newEA = {
@@ -143,9 +143,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         totalEAs: prev.totalEAs + 1,
         activeEAs: prev.activeEAs + 1,
       }))
+
+      return { id: docRef.id, ...newEA }
     } catch (err) {
       console.error("Error creating EA:", err)
-      setError("Failed to create EA. Please try again.")
+      return null
     }
   }
 
