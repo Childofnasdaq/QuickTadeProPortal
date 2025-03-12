@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/utils"
 import { Plus, Trash2 } from "lucide-react"
 
 export default function ManageEAsPage() {
-  const { eas, addEA, deleteEA } = useData()
+  const { eas, createEA, deleteEA } = useData()
   const [newEAName, setNewEAName] = useState("")
   const [isAdding, setIsAdding] = useState(false)
   const [error, setError] = useState("")
@@ -27,16 +27,21 @@ export default function ManageEAsPage() {
 
     setIsLoading(true)
 
-    const result = await addEA(newEAName)
-
-    if (result) {
-      setNewEAName("")
-      setIsAdding(false)
-    } else {
+    try {
+      // Check if createEA exists in the data context
+      if (typeof createEA === "function") {
+        await createEA(newEAName, "")
+        setNewEAName("")
+        setIsAdding(false)
+      } else {
+        setError("EA creation function not available")
+      }
+    } catch (err) {
+      console.error("Error adding EA:", err)
       setError("Failed to add EA")
+    } finally {
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   const handleDeleteEA = async (id: string) => {
