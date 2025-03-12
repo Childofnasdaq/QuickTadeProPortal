@@ -40,20 +40,19 @@ export default function LoginPage() {
     }
 
     try {
-      const success = await login(email, password)
+      // Use the auth context login function
+      await login(email, password)
+      setLoginSuccess(true)
 
-      if (success) {
-        setLoginSuccess(true)
-        // Login function now handles the redirect
-      } else {
-        setError("Invalid email or password")
-      }
-    } catch (error) {
+      // Add a delay before redirecting to ensure Firebase auth state updates
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1500)
+    } catch (error: any) {
       console.error("Login error:", error)
-      setError("An error occurred during login")
+      setError(error.message || "Invalid email or password")
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   if (authLoading) {
