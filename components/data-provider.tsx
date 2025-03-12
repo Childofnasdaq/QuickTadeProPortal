@@ -1,286 +1,254 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useState, useEffect } from "react"
 import { useAuth } from "@/components/auth-provider"
-import type { EA, LicenseKey, Stats } from "@/lib/types"
-import { generateLicenseKey, calculateExpiryDate } from "@/lib/utils"
+import { db } from "@/lib/firebase"
+import { collection, getDocs, query, where, doc, addDoc, deleteDoc, updateDoc } from "firebase/firestore"
+
+// Define types for our data
+type EA = {
+  id: string
+  name: string
+  description: string
+  status: "active" | "inactive"
+  userId: string
+  createdAt: number
+}
+
+type LicenseKey = {
+  id: string
+  key: string
+  status: "active" | "inactive"
+  userId: string
+  eaId: string
+  createdAt: number
+  expiresAt: number
+}
+
+type Stats = {
+  totalEAs: number
+  activeEAs: number
+  totalKeys: number
+  activeKeys: number
+}
 
 type DataContextType = {
   eas: EA[]
   licenseKeys: LicenseKey[]
   stats: Stats
-  addEA: (name: string) => Promise<EA | null>
-  deleteEA: (id: string) => Promise<boolean>
-  generateKey: (username: string, eaId: string, plan: string) => Promise<LicenseKey | null>
-  deleteLicenseKey: (id: string) => Promise<boolean>
-  deactivateLicenseKey: (id: string) => Promise<boolean>
+  loading: boolean
+  error: string | null
+  refreshData: () => Promise<void>
+  createEA: (name: string, description: string) => Promise<void>
+  deleteEA: (id: string) => Promise<void>
+  generateLicenseKey: (eaId: string, expiryDays: number) => Promise<string>
+  deactivateLicenseKey: (id: string) => Promise<void>
 }
 
-const DataContext = createContext<DataContextType | undefined>(undefined)
+const DataContext = createContext<DataContextType | null>(null)
 
-const INITIAL_STATS: Stats = {
-  totalLicenses: 0,
-  activeSubscriptions: 0,
-  totalEAs: 0,
-  maxLicenses: 10000,
+export function useData() {
+  const context = useContext(DataContext)
+  if (!context) {
+    throw new Error("useData must be used within a DataProvider")
+  }
+  return context
 }
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [eas, setEAs] = useState<EA[]>([])
   const [licenseKeys, setLicenseKeys] = useState<LicenseKey[]>([])
-  const [stats, setStats] = useState<Stats>(INITIAL_STATS)
+  const [stats, setStats] = useState<Stats>({
+    totalEAs: 0,
+    activeEAs: 0,
+    totalKeys: 0,
+    activeKeys: 0,
+  })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Load data from localStorage
-  useEffect(() => {
-    if (user) {
-      try {
-        const storedEAs = JSON.parse(localStorage.getItem("eas") || "[]")
-        const storedLicenseKeys = JSON.parse(localStorage.getItem("licenseKeys") || "[]")
-
-        // Filter data to only show items created by the current user
-        const userEAs = storedEAs.filter((ea: any) => ea.createdBy === user.id)
-        const userLicenseKeys = storedLicenseKeys.filter((key: any) => key.createdBy === user.id)
-
-        // Convert string dates to Date objects
-        const parsedEAs = userEAs.map((ea: any) => ({
-          ...ea,
-          createdAt: new Date(ea.createdAt),
-        }))
-
-        const parsedLicenseKeys = userLicenseKeys.map((key: any) => ({
-          ...key,
-          createdAt: new Date(key.createdAt),
-          expiryDate: new Date(key.expiryDate),
-        }))
-
-        setEAs(parsedEAs)
-        setLicenseKeys(parsedLicenseKeys)
-
-        // Update stats
-        updateStats(parsedEAs, parsedLicenseKeys)
-      } catch (error) {
-        console.error("Error loading data:", error)
-        // Initialize with empty arrays if there's an error
-        setEAs([])
-        setLicenseKeys([])
-        updateStats([], [])
-      }
+  // Function to fetch all data
+  const fetchData = async () => {
+    if (!user) {
+      setLoading(false)
+      return
     }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Fetch EAs
+      const easQuery = query(collection(db, "eas"), where("userId", "==", user.uid))
+      const easSnapshot = await getDocs(easQuery)
+      const easData = easSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as EA[]
+      setEAs(easData)
+
+      // Fetch License Keys
+      const keysQuery = query(collection(db, "licenseKeys"), where("userId", "==", user.uid))
+      const keysSnapshot = await getDocs(keysQuery)
+      const keysData = keysSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as LicenseKey[]
+      setLicenseKeys(keysData)
+
+      // Calculate stats
+      setStats({
+        totalEAs: easData.length,
+        activeEAs: easData.filter((ea) => ea.status === "active").length,
+        totalKeys: keysData.length,
+        activeKeys: keysData.filter((key) => key.status === "active").length,
+      })
+
+      setLoading(false)
+    } catch (err) {
+      console.error("Error fetching data:", err)
+      setError("Failed to load data. Please try again.")
+      setLoading(false)
+    }
+  }
+
+  // Fetch data on initial load and when user changes
+  useEffect(() => {
+    fetchData()
   }, [user])
 
-  // Update stats whenever EAs or licenseKeys change
-  const updateStats = (currentEAs: EA[], currentLicenseKeys: LicenseKey[]) => {
-    const activeKeys = currentLicenseKeys.filter((key) => key.status === "active")
-
-    setStats({
-      totalLicenses: currentLicenseKeys.length,
-      activeSubscriptions: activeKeys.length,
-      totalEAs: currentEAs.length,
-      maxLicenses: 10000,
-    })
-  }
-
-  // Add a new EA
-  const addEA = async (name: string): Promise<EA | null> => {
-    if (!user) return null
+  // Function to create a new EA
+  const createEA = async (name: string, description: string) => {
+    if (!user) return
 
     try {
-      const newEA: EA = {
-        id: Date.now().toString(),
+      const newEA = {
         name,
-        createdAt: new Date(),
-        createdBy: user.id,
+        description,
+        status: "active" as const,
+        userId: user.uid,
+        createdAt: Date.now(),
       }
 
-      // Get all EAs (including those from other users)
-      const allEAs = JSON.parse(localStorage.getItem("eas") || "[]")
-      const updatedAllEAs = [...allEAs, newEA]
+      const docRef = await addDoc(collection(db, "eas"), newEA)
 
-      // Update local state with only user's EAs
-      const updatedEAs = [...eas, newEA]
-      setEAs(updatedEAs)
-
-      // Save all EAs to localStorage
-      localStorage.setItem("eas", JSON.stringify(updatedAllEAs))
+      // Update local state
+      setEAs((prev) => [...prev, { id: docRef.id, ...newEA }])
 
       // Update stats
-      updateStats(updatedEAs, licenseKeys)
-
-      return newEA
-    } catch (error) {
-      console.error("Add EA error:", error)
-      return null
+      setStats((prev) => ({
+        ...prev,
+        totalEAs: prev.totalEAs + 1,
+        activeEAs: prev.activeEAs + 1,
+      }))
+    } catch (err) {
+      console.error("Error creating EA:", err)
+      setError("Failed to create EA. Please try again.")
     }
   }
 
-  // Delete an EA
-  const deleteEA = async (id: string): Promise<boolean> => {
-    if (!user) return false
+  // Function to delete an EA
+  const deleteEA = async (id: string) => {
+    if (!user) return
 
     try {
-      // Check if EA is in use by any license key
-      const isInUse = licenseKeys.some((key) => key.eaId === id)
-      if (isInUse) {
-        return false
-      }
+      await deleteDoc(doc(db, "eas", id))
 
-      // Get all EAs (including those from other users)
-      const allEAs = JSON.parse(localStorage.getItem("eas") || "[]")
-      const updatedAllEAs = allEAs.filter((ea: any) => ea.id !== id)
-
-      // Update local state with only user's EAs
-      const updatedEAs = eas.filter((ea) => ea.id !== id)
-      setEAs(updatedEAs)
-
-      // Save all EAs to localStorage
-      localStorage.setItem("eas", JSON.stringify(updatedAllEAs))
+      // Update local state
+      const deletedEA = eas.find((ea) => ea.id === id)
+      setEAs((prev) => prev.filter((ea) => ea.id !== id))
 
       // Update stats
-      updateStats(updatedEAs, licenseKeys)
-
-      return true
-    } catch (error) {
-      console.error("Delete EA error:", error)
-      return false
+      if (deletedEA) {
+        setStats((prev) => ({
+          ...prev,
+          totalEAs: prev.totalEAs - 1,
+          activeEAs: deletedEA.status === "active" ? prev.activeEAs - 1 : prev.activeEAs,
+        }))
+      }
+    } catch (err) {
+      console.error("Error deleting EA:", err)
+      setError("Failed to delete EA. Please try again.")
     }
   }
 
-  // Generate a new license key
-  const generateKey = async (username: string, eaId: string, plan: string): Promise<LicenseKey | null> => {
-    if (!user) return null
+  // Function to generate a license key
+  const generateLicenseKey = async (eaId: string, expiryDays: number) => {
+    if (!user) return ""
 
     try {
-      // Find the EA
-      const ea = eas.find((ea) => ea.id === eaId)
-      if (!ea) return null
+      // Generate a random license key
+      const key =
+        `QT-${Math.random().toString(36).substring(2, 8)}-${Math.random().toString(36).substring(2, 8)}-${Math.random().toString(36).substring(2, 8)}`.toUpperCase()
 
-      // Check if we've reached the maximum number of licenses
-      if (licenseKeys.length >= stats.maxLicenses) {
-        return null
-      }
-
-      const key = generateLicenseKey()
-      const createdAt = new Date()
-      const expiryDate = calculateExpiryDate(plan, createdAt)
-
-      const newLicenseKey: LicenseKey = {
-        id: Date.now().toString(),
+      const newKey = {
         key,
-        username,
+        status: "active" as const,
+        userId: user.uid,
         eaId,
-        eaName: ea.name,
-        plan,
-        status: "active",
-        createdAt,
-        expiryDate,
-        createdBy: user.id,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + expiryDays * 24 * 60 * 60 * 1000,
       }
 
-      // Get all license keys (including those from other users)
-      const allLicenseKeys = JSON.parse(localStorage.getItem("licenseKeys") || "[]")
-      const updatedAllLicenseKeys = [...allLicenseKeys, newLicenseKey]
+      const docRef = await addDoc(collection(db, "licenseKeys"), newKey)
 
-      // Update local state with only user's license keys
-      const updatedLicenseKeys = [...licenseKeys, newLicenseKey]
-      setLicenseKeys(updatedLicenseKeys)
-
-      // Save all license keys to localStorage
-      localStorage.setItem("licenseKeys", JSON.stringify(updatedAllLicenseKeys))
+      // Update local state
+      setLicenseKeys((prev) => [...prev, { id: docRef.id, ...newKey }])
 
       // Update stats
-      updateStats(eas, updatedLicenseKeys)
+      setStats((prev) => ({
+        ...prev,
+        totalKeys: prev.totalKeys + 1,
+        activeKeys: prev.activeKeys + 1,
+      }))
 
-      return newLicenseKey
-    } catch (error) {
-      console.error("Generate key error:", error)
-      return null
+      return key
+    } catch (err) {
+      console.error("Error generating license key:", err)
+      setError("Failed to generate license key. Please try again.")
+      return ""
     }
   }
 
-  // Delete a license key
-  const deleteLicenseKey = async (id: string): Promise<boolean> => {
-    if (!user) return false
+  // Function to deactivate a license key
+  const deactivateLicenseKey = async (id: string) => {
+    if (!user) return
 
     try {
-      // Get all license keys (including those from other users)
-      const allLicenseKeys = JSON.parse(localStorage.getItem("licenseKeys") || "[]")
-      const updatedAllLicenseKeys = allLicenseKeys.filter((key: any) => key.id !== id)
+      await updateDoc(doc(db, "licenseKeys", id), {
+        status: "inactive",
+      })
 
-      // Update local state with only user's license keys
-      const updatedLicenseKeys = licenseKeys.filter((key) => key.id !== id)
-      setLicenseKeys(updatedLicenseKeys)
-
-      // Save all license keys to localStorage
-      localStorage.setItem("licenseKeys", JSON.stringify(updatedAllLicenseKeys))
+      // Update local state
+      setLicenseKeys((prev) => prev.map((key) => (key.id === id ? { ...key, status: "inactive" as const } : key)))
 
       // Update stats
-      updateStats(eas, updatedLicenseKeys)
-
-      return true
-    } catch (error) {
-      console.error("Delete license key error:", error)
-      return false
+      setStats((prev) => ({
+        ...prev,
+        activeKeys: prev.activeKeys - 1,
+      }))
+    } catch (err) {
+      console.error("Error deactivating license key:", err)
+      setError("Failed to deactivate license key. Please try again.")
     }
   }
 
-  // Deactivate a license key
-  const deactivateLicenseKey = async (id: string): Promise<boolean> => {
-    if (!user) return false
-
-    try {
-      // Get all license keys (including those from other users)
-      const allLicenseKeys = JSON.parse(localStorage.getItem("licenseKeys") || "[]")
-
-      // Update the status in all license keys
-      const updatedAllLicenseKeys = allLicenseKeys.map((key: any) =>
-        key.id === id ? { ...key, status: "inactive" } : key,
-      )
-
-      // Update local state with only user's license keys
-      const updatedLicenseKeys = licenseKeys.map((key) =>
-        key.id === id ? { ...key, status: "inactive" as const } : key,
-      )
-      setLicenseKeys(updatedLicenseKeys)
-
-      // Save all license keys to localStorage
-      localStorage.setItem("licenseKeys", JSON.stringify(updatedAllLicenseKeys))
-
-      // Update stats
-      updateStats(eas, updatedLicenseKeys)
-
-      return true
-    } catch (error) {
-      console.error("Deactivate license key error:", error)
-      return false
-    }
+  // Create a memoized value for the context
+  const value = {
+    eas,
+    licenseKeys,
+    stats,
+    loading,
+    error,
+    refreshData: fetchData,
+    createEA,
+    deleteEA,
+    generateLicenseKey,
+    deactivateLicenseKey,
   }
 
-  return (
-    <DataContext.Provider
-      value={{
-        eas,
-        licenseKeys,
-        stats,
-        addEA,
-        deleteEA,
-        generateKey,
-        deleteLicenseKey,
-        deactivateLicenseKey,
-      }}
-    >
-      {children}
-    </DataContext.Provider>
-  )
-}
-
-export function useData() {
-  const context = useContext(DataContext)
-  if (context === undefined) {
-    throw new Error("useData must be used within a DataProvider")
-  }
-  return context
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }
 
