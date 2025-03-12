@@ -1,76 +1,64 @@
 "use client"
 
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/contexts/auth-context"
+import { Card, CardContent } from "@/components/ui/card"
 import { useData } from "@/components/data-provider"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState, useEffect } from "react"
+import { formatDate } from "@/lib/utils"
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { userData } = useAuth()
   const { stats } = useData()
-  const [currentDate, setCurrentDate] = useState("")
-
-  useEffect(() => {
-    const date = new Date()
-    setCurrentDate(
-      date.toLocaleDateString("en-US", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-    )
-  }, [])
+  const today = formatDate(new Date())
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <div className="text-red-400">Today ({currentDate})</div>
+        <p className="text-red-400">Today ({today})</p>
       </div>
 
-      <div className="bg-red-950/20 border border-red-900/50 rounded-lg p-4 text-red-200">
-        All systems are running smoothly! You have {stats.totalLicenses} active licenses. Your Mentor id is -&gt;{" "}
-        {user?.mentorId}
-      </div>
+      {/* Status Message */}
+      <Card className="mb-4 bg-[#1a0f0f] border-red-900/50">
+        <CardContent className="p-3">
+          <p className="text-green-400 text-sm">
+            All systems are running smoothly! You have {stats?.activeSubscriptions || 0} active licenses. Your Mentor id
+            is → {userData?.mentorId || "3222"}
+          </p>
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-blue-600/20 border-blue-500/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-blue-200 text-sm font-medium">Total Licenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-100">{stats.totalLicenses}</div>
-            <p className="text-blue-300 text-sm mt-1">All time EA users</p>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Total Licenses */}
+        <Card className="bg-[#0a1929] border-blue-900/50">
+          <CardContent className="p-4">
+            <h2 className="text-4xl font-bold text-white mb-1">{stats?.totalLicenses || 0}</h2>
+            <p className="text-blue-400 text-sm">All time EA users</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-green-600/20 border-green-500/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-green-200 text-sm font-medium">Active Subscriptions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-100">{stats.activeSubscriptions}</div>
-            <p className="text-green-300 text-sm mt-1">Current Active EA Users</p>
+        {/* Active Subscriptions */}
+        <Card className="bg-[#0a2918] border-green-900/50">
+          <CardContent className="p-4">
+            <h2 className="text-4xl font-bold text-white mb-1">{stats?.activeSubscriptions || 0}</h2>
+            <p className="text-green-400 text-sm">Current Active EA Users</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-purple-600/20 border-purple-500/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-purple-200 text-sm font-medium">Total EAs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-100">{stats.totalEAs}</div>
-            <p className="text-purple-300 text-sm mt-1">All EAs you are Licensing</p>
+        {/* Total EAs */}
+        <Card className="bg-[#1a0f29] border-purple-900/50">
+          <CardContent className="p-4">
+            <h2 className="text-4xl font-bold text-white mb-1">{stats?.totalEAs || 0}</h2>
+            <p className="text-purple-400 text-sm">All EAs you are Licensing</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-red-600/20 border-red-500/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-red-200 text-sm font-medium">Maximum Licenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-red-100">{stats.maxLicenses}</div>
-            <p className="text-red-300 text-sm mt-1">Total licenses You can generate</p>
+        {/* Maximum Licenses */}
+        <Card className="bg-[#290f0f] border-red-900/50">
+          <CardContent className="p-4">
+            <h2 className="text-4xl font-bold text-white mb-1">{stats?.maxLicenses || 10000}</h2>
+            <p className="text-red-400 text-sm">Total licenses You can generate</p>
           </CardContent>
         </Card>
       </div>
