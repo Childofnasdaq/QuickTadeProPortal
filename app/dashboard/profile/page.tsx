@@ -107,9 +107,16 @@ export default function ProfilePage() {
                   const file = e.target.files?.[0]
                   if (file) {
                     const reader = new FileReader()
-                    reader.onload = (event) => {
+                    reader.onload = async (event) => {
                       if (event.target?.result) {
-                        updateProfile({ avatar: event.target.result as string })
+                        try {
+                          // Instead of using updateProfile directly, use our updateProfile function
+                          await updateProfile({
+                            avatar: event.target.result as string,
+                          })
+                        } catch (error) {
+                          console.error("Error updating avatar:", error)
+                        }
                       }
                     }
                     reader.readAsDataURL(file)
