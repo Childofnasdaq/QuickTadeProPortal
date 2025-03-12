@@ -67,19 +67,21 @@ export default function SignupPage() {
       return
     }
 
-    const result = await signup(formData)
+    try {
+      await signup(formData)
 
-    if (result.success) {
-      // Show success message and redirect to login
+      // Show success message
       setSuccess(true)
+
+      // Redirect to login after a short delay
       setTimeout(() => {
         router.push("/login")
-      }, 2000)
-    } else {
-      setError(result.error || "Registration failed")
+      }, 1500)
+    } catch (error: any) {
+      console.error("Signup error:", error)
+      setError(error.message || "Registration failed")
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   if (authLoading) {
