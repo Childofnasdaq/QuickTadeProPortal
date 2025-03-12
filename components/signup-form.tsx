@@ -4,111 +4,143 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/auth-provider"
+import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import Link from "next/link"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { signup } from "@/lib/auth-service"
 
 export function SignupForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const { signUp } = useAuth()
   const router = useRouter()
-  const { toast } = useToast()
+  const [formData, setFormData] = useState({
+    fullName: "",
+    displayName: "",
+    email: "",
+    phone: "",
+    password: "",
+  })
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      })
-      return
-    }
+    setError("")
+    setIsLoading(true)
 
     try {
-      setIsLoading(true)
-      await signUp(email, password)
-      toast({
-        title: "Account created!",
-        description: "You have successfully signed up.",
-      })
-      router.push("/dashboard")
-    } catch (error: any) {
-      console.error("Signup error:", error)
-      toast({
-        title: "Error signing up",
-        description: error.message || "There was an error creating your account.",
-        variant: "destructive",
-      })
-    } finally {
+      await signup(formData)
+      // Redirect to login page immediately after successful signup
+      router.push("/login")
+    } catch (err: any) {
+      setError(err.message || "Failed to create account")
       setIsLoading(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center">Create an Account</CardTitle>
-        <CardDescription className="text-center">Enter your email and password to create your account</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-xl overflow-hidden bg-black border border-red-500 glow-border">
+        <div className="p-8">
+          <div className="flex justify-center mb-6">
+            <Image
+              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/304fc277-f835-46c7-ba23-d07c855074f2_20250303_233002_0000-XjQ9UtyKq1KXvIjUOL0ffYCtH5gm1g.png"
+              alt="Logo"
+              width={80}
+              height={80}
+            />
+          </div>
+
+          <h1 className="text-2xl font-bold text-red-500 text-center mb-2 neon-text">Sign Up</h1>
+          <p className="text-red-400 text-center mb-6">Create your QuickTrade Pro account</p>
+
+          {error && (
+            <div className="bg-red-900/30 border border-red-500 text-red-200 px-4 py-2 rounded-md mb-4">{error}</div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              id="email"
+              name="fullName"
+              placeholder="Full name"
+              value={formData.fullName}
+              onChange={handleChange}
+              className="bg-black/50 border-red-500/50 focus:border-red-500 text-white"
+              required
+            />
+
+            <Input
+              name="displayName"
+              placeholder="Display name, e.g. Today Forex Trader"
+              value={formData.displayName}
+              onChange={handleChange}
+              className="bg-black/50 border-red-500/50 focus:border-red-500 text-white"
+              required
+            />
+
+            <Input
+              name="email"
               type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              className="bg-black/50 border-red-500/50 focus:border-red-500 text-white"
               required
-              disabled={isLoading}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+
             <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="phone"
+              placeholder="Contact number"
+              value={formData.phone}
+              onChange={handleChange}
+              className="bg-black/50 border-red-500/50 focus:border-red-500 text-white"
               required
-              disabled={isLoading}
             />
+
+            <div className="relative">
+              <Input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                className="bg-black/50 border-red-500/50 focus:border-red-500 text-white pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-400"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 text-white" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                "Register"
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-4 text-center">
+            <Link href="/login" className="text-red-400 hover:text-red-300 text-sm">
+              Already have an account? Login
+            </Link>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Creating Account..." : "Sign Up"}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign In
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+        </div>
+      </div>
+    </div>
   )
 }
 
