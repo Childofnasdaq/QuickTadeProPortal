@@ -4,54 +4,50 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { signup } from "@/lib/auth-service"
+import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
 export function SignupForm() {
-  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { signUp } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
 
-    // Validate passwords match
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      })
       return
     }
-
-    // Validate password strength
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long")
-      return
-    }
-
-    setIsLoading(true)
 
     try {
-      await signup({
-        email,
-        password,
-        fullName,
+      setIsLoading(true)
+      await signUp(email, password)
+      toast({
+        title: "Account created!",
+        description: "You have successfully signed up.",
       })
-
-      // Redirect to dashboard after successful signup
       router.push("/dashboard")
-    } catch (err: any) {
-      console.error("Signup error:", err)
-      setError(err.message || "Failed to create account. Please try again.")
+    } catch (error: any) {
+      console.error("Signup error:", error)
+      toast({
+        title: "Error signing up",
+        description: error.message || "There was an error creating your account.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -59,31 +55,12 @@ export function SignupForm() {
 
   return (
     <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
-        <CardDescription className="text-center">
-          Enter your information to create your QuickTrade Pro account
-        </CardDescription>
+      <CardHeader>
+        <CardTitle className="text-2xl text-center">Create an Account</CardTitle>
+        <CardDescription className="text-center">Enter your email and password to create your account</CardDescription>
       </CardHeader>
       <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              id="fullName"
-              placeholder="John Doe"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -101,7 +78,6 @@ export function SignupForm() {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -113,22 +89,14 @@ export function SignupForm() {
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={isLoading}
             />
           </div>
-          <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
-              </>
-            ) : (
-              "Sign Up"
-            )}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating Account..." : "Sign Up"}
           </Button>
         </form>
       </CardContent>
@@ -136,7 +104,7 @@ export function SignupForm() {
         <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link href="/login" className="text-primary hover:underline">
-            Login
+            Sign In
           </Link>
         </p>
       </CardFooter>
