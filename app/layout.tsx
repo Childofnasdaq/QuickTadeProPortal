@@ -2,15 +2,14 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider"
-import { DataProvider } from "@/components/data-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "QUICKTRADE PRO",
-  description: "Professional Trading License Management Platform",
-    generator: 'v0.dev'
+  description: "Professional Trading Platform",
 }
 
 export default function RootLayout({
@@ -20,15 +19,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} dark`}>
-        <AuthProvider>
-          <DataProvider>{children}</DataProvider>
-        </AuthProvider>
+      <body className={inter.className}>
+        <ThemeProvider attribute="class" defaultTheme="light">
+          <AuthProvider>
+            <main className="min-h-screen bg-background">{children}</main>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
 }
 
-
-
-import './globals.css'
