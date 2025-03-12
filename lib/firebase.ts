@@ -9,31 +9,36 @@ const firebaseConfig = {
   apiKey: "AIzaSyDE54BfEl0Qx7jqDnXeFPwy0nrDabAmi7U",
   authDomain: "quicktradepro-fbed4.firebaseapp.com",
   projectId: "quicktradepro-fbed4",
-  storageBucket: "quicktradepro-fbed4.firebasestorage.app",
+  storageBucket: "quicktradepro-fbed4.appspot.com",
   messagingSenderId: "443810193511",
   appId: "1:443810193511:web:85c860d4b61ecd64cff4c2",
-  measurementId: "G-EF3W2RMNRQ"
-};
+  measurementId: "G-EF3W2RMNRQ",
+}
 
 // Initialize Firebase
-let app;
+let app
 if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
+  app = initializeApp(firebaseConfig)
 } else {
-  app = getApps()[0];
+  app = getApps()[0]
 }
 
 // Initialize services
-const auth = getAuth(app);
-const db = getFirestore(app);
+const auth = getAuth(app)
+const db = getFirestore(app)
 
 // Create a function to initialize analytics only on client side
 const initializeAnalytics = () => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     try {
-      return getAnalytics(app);
+      return getAnalytics(app)
     } catch (error) {
-      console.error("Analytics failed to initialize:", error);
-      return null;
+      console.error("Analytics failed to initialize:", error)
+      return null
     }
+  }
+  return null
+}
+
+export { app, auth, db, initializeAnalytics }
 
