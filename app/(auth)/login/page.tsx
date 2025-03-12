@@ -2,17 +2,17 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 
 export default function LoginPage() {
-  const { login, user } = useAuth()
+  const { login, user, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -54,6 +54,15 @@ export default function LoginPage() {
     }
 
     setIsLoading(false)
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+        <p className="mt-4 text-red-400">Loading...</p>
+      </div>
+    )
   }
 
   return (
@@ -117,7 +126,14 @@ export default function LoginPage() {
               </div>
 
               <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 text-white" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
               </Button>
             </form>
 
