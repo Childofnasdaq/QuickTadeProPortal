@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth-provider"
-import { LayoutDashboard, KeyRound, BarChart3, Settings, LogOut, Menu, X } from "lucide-react"
+import { LayoutDashboard, KeyRound, BarChart3, Settings, LogOut, Menu, X, Gift } from "lucide-react"
 import { useState, useEffect } from "react"
 
 export function Sidebar() {
@@ -40,6 +40,11 @@ export function Sidebar() {
       icon: Settings,
       href: "/dashboard/manage-eas",
       label: "Manage EAs",
+    },
+    {
+      icon: Gift,
+      href: "/dashboard/rewards",
+      label: "Rewards",
     },
     {
       icon: Settings,

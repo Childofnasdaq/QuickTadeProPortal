@@ -60,8 +60,8 @@
     "zod": "^3.24.1",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "react-icons": "latest",
-    "firebase": "latest"
+    "firebase": "latest",
+    "react-icons": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

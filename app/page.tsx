@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronRight, Star } from "lucide-react"
+import { ChevronRight, Star, ExternalLink } from "lucide-react"
 import { FaWhatsapp, FaInstagram, FaFacebook, FaTiktok } from "react-icons/fa"
 import { LiveChat } from "@/components/live-chat"
 import { FaTelegram } from "react-icons/fa6"
@@ -61,27 +61,30 @@ export default function LandingPage() {
               <h1 className="text-4xl md:text-6xl font-bold mb-6 text-red-500 neon-text">QUICKTRADE PRO</h1>
               <p className="text-xl md:text-2xl mb-8 text-red-200">Professional Trading License Management Platform</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
-                >
-                  <Link href="/signup">Get Started</Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
-                >
-                  <Link href="/login">Login</Link>
-                </Button>
-                <Button
-                  size="lg"
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
-                  onClick={() => setPaymentDialogOpen(true)}
-                >
-                  Download App ($60)
-                </Button>
+                {/* Updated button container with max-width */}
+                <div className="max-w-sm mx-auto lg:mx-0 flex flex-col sm:flex-row gap-4">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
+                  >
+                    <Link href="/signup">Get Started</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
+                  >
+                    <Link href="/login">Login</Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
+                    onClick={() => setPaymentDialogOpen(true)}
+                  >
+                    Download App ($60)
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="flex-1">
@@ -110,6 +113,42 @@ export default function LandingPage() {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recommended Broker Section - Updated with JP Markets logo */}
+      <div className="py-12 bg-gradient-to-r from-black to-red-950/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-black/80 border border-red-500/30 rounded-lg p-8 text-center">
+            <h2 className="text-2xl font-bold text-red-500 neon-text mb-4">Recommended Broker</h2>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+              <div className="w-full md:w-1/3">
+                <Image
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/JPMarkets_Logo%20%281%29-tXthEasNDofncDipbmkM49uxL3ckzo.png"
+                  alt="JP Markets Logo"
+                  width={300}
+                  height={100}
+                  className="mx-auto"
+                />
+              </div>
+              <div className="w-full md:w-2/3 text-left">
+                <h3 className="text-xl font-semibold text-red-400 mb-2">JP MARKETS</h3>
+                <p className="text-gray-300 mb-4">
+                  We recommend JP MARKETS as our preferred broker for forex trading. They offer competitive spreads,
+                  fast execution, and a reliable trading platform that works seamlessly with our EAs.
+                </p>
+                <Button asChild className="bg-red-600 hover:bg-red-700 text-white">
+                  <a
+                    href="https://dashboard.jpmarkets.co.za/live_signup?brd=1&sidc=4BECE3A1-F0E1-4AF7-BE81-C02F97FA3D59"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Account with JP MARKETS <ExternalLink className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
               </div>
             </div>
           </div>
@@ -377,6 +416,15 @@ export default function LandingPage() {
             >
               <FaTelegram className="w-5 h-5" />
             </a>
+          </div>
+
+          <div className="mt-4">
+            <Link href="/terms" className="text-red-400 hover:text-red-300 text-sm mx-2">
+              Terms of Service
+            </Link>
+            <Link href="/privacy" className="text-red-400 hover:text-red-300 text-sm mx-2">
+              Privacy Policy
+            </Link>
           </div>
         </div>
       </footer>

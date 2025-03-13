@@ -30,6 +30,35 @@ export default function GenerateKeyPage() {
     { id: "lifetime", name: "Lifetime" },
   ]
 
+  const calculateExpiryDate = (plan: string, startDate: Date): Date => {
+    const expiryDate = new Date(startDate)
+
+    switch (plan) {
+      case "3days":
+        expiryDate.setDate(expiryDate.getDate() + 3)
+        break
+      case "5days":
+        expiryDate.setDate(expiryDate.getDate() + 5)
+        break
+      case "30days":
+        expiryDate.setDate(expiryDate.getDate() + 30)
+        break
+      case "3months":
+        expiryDate.setMonth(expiryDate.getMonth() + 3)
+        break
+      case "6months":
+        expiryDate.setMonth(expiryDate.getMonth() + 6)
+        break
+      case "1year":
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1)
+        break
+      default:
+        break
+    }
+
+    return expiryDate
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -87,6 +116,162 @@ export default function GenerateKeyPage() {
             <span className="font-semibold">{eas.find((ea) => ea.id === selectedEA)?.name}</span> with a{" "}
             <span className="font-semibold">{getPlanDisplayName(selectedPlan)}</span> plan
           </p>
+
+          {/* MT4/MT5 Scripts Section */}
+          <div className="mt-8 mb-6">
+            <h3 className="text-lg font-semibold text-red-300 mb-4">EA Script Files</h3>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* MT4 Script File */}
+              <div className="bg-black/80 border border-red-500/50 rounded-lg overflow-hidden">
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-red-400 mr-3"
+                    >
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <div>
+                      <p className="text-red-200 font-medium">{eas.find((ea) => ea.id === selectedEA)?.name}.mq4</p>
+                      <p className="text-red-400 text-xs">MT4 Script File</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500 text-red-400 hover:bg-red-950 opacity-70 cursor-not-allowed"
+                    disabled={true}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mr-2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Download</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="ml-2"
+                    >
+                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </Button>
+                </div>
+                <div className="bg-red-900/20 px-4 py-2 text-xs text-red-300">
+                  <span>
+                    License: {generatedKey} • Expires:{" "}
+                    {selectedPlan === "lifetime"
+                      ? "Never"
+                      : new Date(calculateExpiryDate(selectedPlan, new Date())).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* MT5 Script File */}
+              <div className="bg-black/80 border border-red-500/50 rounded-lg overflow-hidden">
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-red-400 mr-3"
+                    >
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <div>
+                      <p className="text-red-200 font-medium">{eas.find((ea) => ea.id === selectedEA)?.name}.mq5</p>
+                      <p className="text-red-400 text-xs">MT5 Script File</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500 text-red-400 hover:bg-red-950 opacity-70 cursor-not-allowed"
+                    disabled={true}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mr-2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Download</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="ml-2"
+                    >
+                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </Button>
+                </div>
+                <div className="bg-red-900/20 px-4 py-2 text-xs text-red-300">
+                  <span>
+                    License: {generatedKey} • Expires:{" "}
+                    {selectedPlan === "lifetime"
+                      ? "Never"
+                      : new Date(calculateExpiryDate(selectedPlan, new Date())).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex space-x-4 justify-center">
             <Button
               variant="outline"
