@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { CheckCircle } from "lucide-react"
 
 export default function PaymentSuccessPage() {
   const router = useRouter()
@@ -33,10 +32,9 @@ export default function PaymentSuccessPage() {
         </Link>
 
         <div className="bg-black border border-green-500 rounded-lg p-8 shadow-lg">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-green-400 mb-4">Payment Successful!</h1>
           <p className="text-green-300 mb-6">
-            Thank you for your purchase of QUICKTRADE PRO. Your download link has been sent to your email.
+            Thank you for your purchase of QUICKTRADE PRO ($60 / R1100). Your download link has been sent to your email.
           </p>
           <p className="text-red-300 mb-8">You will be redirected to the dashboard in a few seconds...</p>
 

@@ -82,7 +82,7 @@ export default function LandingPage() {
                     className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
                     onClick={() => setPaymentDialogOpen(true)}
                   >
-                    Download App ($60)
+                    Download App ($60 / R1100)
                   </Button>
                 </div>
               </div>
@@ -160,19 +160,13 @@ export default function LandingPage() {
         <DialogContent className="bg-black border border-red-500 text-white">
           <DialogHeader>
             <DialogTitle className="text-red-500 text-xl">Choose Payment Method</DialogTitle>
-            <DialogDescription className="text-red-300">Purchase QUICKTRADE PRO for $60 USD</DialogDescription>
+            <DialogDescription className="text-red-300">Purchase QUICKTRADE PRO for $60 USD / R1100</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-4">
-              <Button asChild className="bg-[#0b2e82] hover:bg-[#0a2971] text-white font-bold">
-                <a
-                  href="https://www.payfast.co.za/eng/process?cmd=_paynow&receiver=27246195&item_name=QUICKTRADE+PRO&amount=60&return_url=https://childofnasdaqofficial.co.za/payment-success&cancel_url=https://childofnasdaqofficial.co.za/payment-cancel"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Pay with PayFast
-                </a>
+              <Button asChild className="bg-[#0F1A4F] hover:bg-[#1a2a6c] text-white font-bold">
+                <a href="/yoco-payment">Pay with Yoco</a>
               </Button>
 
               <Button
