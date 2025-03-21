@@ -4,19 +4,8 @@ import type React from "react"
 
 import { createContext, useContext, useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { generateMentorId } from "@/lib/utils"
 import type { User } from "@/lib/types"
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  updateProfile as updateFirebaseProfile,
-  setPersistence,
-  browserLocalPersistence,
-} from "firebase/auth"
-import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, serverTimestamp } from "firebase/firestore"
-import { auth, db } from "@/lib/firebase"
+import { createUser, authenticateUser, updateUserProfile } from "@/lib/api"
 
 type AuthContextType = {
   user: User | null
@@ -31,19 +20,13 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Use localStorage as a fallback when Firestore permissions are denied
+const LOCAL_STORAGE_USER_KEY = "quicktradepro_user"
+const LOCAL_STORAGE_REGISTERED_USERS = "quicktradepro_registered_users"
+
+// Helper function to store user in localStorage
 const saveUserToLocalStorage = (user: User) => {
   try {
-    const users = JSON.parse(localStorage.getItem("users") || "[]")
-    const existingUserIndex = users.findIndex((u: any) => u.id === user.id)
-
-    if (existingUserIndex >= 0) {
-      users[existingUserIndex] = user
-    } else {
-      users.push(user)
-    }
-
-    localStorage.setItem("users", JSON.stringify(users))
+    localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(user))
     return true
   } catch (error) {
     console.error("Error saving user to localStorage:", error)
@@ -51,13 +34,40 @@ const saveUserToLocalStorage = (user: User) => {
   }
 }
 
-const getUserFromLocalStorage = (userId: string) => {
+// Helper function to get user from localStorage
+const getUserFromLocalStorage = () => {
   try {
-    const users = JSON.parse(localStorage.getItem("users") || "[]")
-    return users.find((u: any) => u.id === userId) || null
+    const userData = localStorage.getItem(LOCAL_STORAGE_USER_KEY)
+    return userData ? JSON.parse(userData) : null
   } catch (error) {
     console.error("Error getting user from localStorage:", error)
     return null
+  }
+}
+
+// Helper function to save registered user for fallback
+const saveRegisteredUser = (user: User & { password: string }) => {
+  try {
+    const existingUsers = localStorage.getItem(LOCAL_STORAGE_REGISTERED_USERS)
+    const users = existingUsers ? JSON.parse(existingUsers) : []
+
+    // Check if user already exists
+    const existingIndex = users.findIndex((u: User) => u.email.toLowerCase() === user.email.toLowerCase())
+
+    if (existingIndex >= 0) {
+      // Update existing user
+      users[existingIndex] = user
+    } else {
+      // Add new user
+      users.push(user)
+    }
+
+    localStorage.setItem(LOCAL_STORAGE_REGISTERED_USERS, JSON.stringify(users))
+    console.log(`Saved registered user to localStorage: ${user.email}`)
+    return true
+  } catch (error) {
+    console.error("Error saving registered user to localStorage:", error)
+    return false
   }
 }
 
@@ -67,122 +77,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  // Set persistence to LOCAL (persists even when browser is closed)
+  // Check if user is already logged in via localStorage
   useEffect(() => {
-    const setupPersistence = async () => {
-      try {
-        await setPersistence(auth, browserLocalPersistence)
-      } catch (error) {
-        console.error("Error setting persistence:", error)
+    const loadUser = () => {
+      const savedUser = getUserFromLocalStorage()
+      if (savedUser) {
+        setUser(savedUser)
       }
+      setIsLoading(false)
     }
 
-    setupPersistence()
-  }, [])
-
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // Try to get user data from Firestore
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid))
-
-          if (userDoc.exists()) {
-            const userData = userDoc.data() as User
-            setUser(userData)
-
-            // Also save to localStorage for cross-browser consistency
-            saveUserToLocalStorage(userData)
-          } else {
-            // If not in Firestore, try localStorage
-            const localUser = getUserFromLocalStorage(firebaseUser.uid)
-
-            if (localUser) {
-              setUser(localUser)
-
-              // Try to save to Firestore for cross-browser consistency
-              try {
-                await setDoc(doc(db, "users", firebaseUser.uid), localUser)
-              } catch (error) {
-                console.error("Error saving local user to Firestore:", error)
-              }
-            } else {
-              // If user exists in Firebase Auth but not in Firestore or localStorage
-              // Create a basic user record
-              const newUser: User = {
-                id: firebaseUser.uid,
-                mentorId: generateMentorId(),
-                email: firebaseUser.email || "",
-                name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
-                displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
-                phone: "",
-                approved: true,
-                isAdmin: false,
-                createdAt: new Date(),
-              }
-
-              try {
-                await setDoc(doc(db, "users", firebaseUser.uid), newUser)
-              } catch (error) {
-                console.error("Error creating new user in Firestore:", error)
-              }
-
-              saveUserToLocalStorage(newUser)
-              setUser(newUser)
-            }
-          }
-        } catch (error: any) {
-          console.error("Error fetching user data:", error)
-
-          // If Firestore permission denied, try localStorage
-          if (error.code === "permission-denied") {
-            const localUser = getUserFromLocalStorage(firebaseUser.uid)
-
-            if (localUser) {
-              setUser(localUser)
-            } else {
-              // Create a basic user record in localStorage
-              const newUser: User = {
-                id: firebaseUser.uid,
-                mentorId: generateMentorId(),
-                email: firebaseUser.email || "",
-                name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
-                displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "",
-                phone: "",
-                approved: true,
-                isAdmin: false,
-                createdAt: new Date(),
-              }
-
-              saveUserToLocalStorage(newUser)
-              setUser(newUser)
-            }
-          } else {
-            await signOut(auth)
-            setUser(null)
-          }
-        }
-      } else {
-        setUser(null)
-      }
-
-      setIsLoading(false)
-    })
-
-    return () => unsubscribe()
+    loadUser()
   }, [])
 
   // Handle routing based on auth state
   useEffect(() => {
     if (!isLoading) {
-      const publicPaths = ["/", "/login", "/signup", "/forgot-password"]
-      const isPublicPath = publicPaths.includes(pathname)
+      const publicPaths = [
+        "/",
+        "/login",
+        "/signup",
+        "/forgot-password",
+        "/payment",
+        "/yoco-payment",
+        "/payment-success",
+        "/payment-cancel",
+        "/terms",
+        "/privacy",
+      ]
+      const isPublicPath =
+        publicPaths.includes(pathname) || pathname.startsWith("/yoco-payment") || pathname.startsWith("/payment")
 
       if (!user && !isPublicPath) {
         router.push("/login")
-      } else if (user && isPublicPath && pathname !== "/forgot-password" && pathname !== "/") {
-        router.push("/dashboard")
+      } else if (user && isPublicPath && !pathname.startsWith("/forgot-password") && pathname !== "/") {
+        // Don't redirect from payment pages
+        if (!pathname.includes("payment") && !pathname.includes("privacy") && !pathname.includes("terms")) {
+          router.push("/dashboard")
+        }
       }
     }
   }, [user, isLoading, pathname, router])
@@ -190,178 +122,101 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (userData: Omit<User, "id" | "mentorId" | "approved" | "isAdmin"> & { password: string }) => {
     setIsLoading(true)
     try {
-      // Check if email already exists in localStorage first
-      const localUsers = JSON.parse(localStorage.getItem("users") || "[]")
-      const existingLocalUser = localUsers.find((u: any) => u.email.toLowerCase() === userData.email.toLowerCase())
+      console.log(`Signing up user: ${userData.email}`)
+      const result = await createUser(userData)
 
-      if (existingLocalUser) {
+      if (!result.success || !result.user) {
+        console.error("MongoDB user creation failed:", result.error)
+
+        // Fallback to local user creation
+        console.log("Attempting local user creation as fallback")
+
+        // Generate a local user
+        const localUser: User & { password: string } = {
+          id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+          mentorId: generateMentorId(),
+          email: userData.email.toLowerCase(),
+          name: userData.name,
+          displayName: userData.displayName,
+          phone: userData.phone || "",
+          approved: true,
+          isAdmin: false,
+          password: userData.password,
+          createdAt: new Date(),
+        }
+
+        // Save the local user for both current session and future fallback
+        saveUserToLocalStorage(localUser)
+        saveRegisteredUser(localUser)
+        setUser(localUser)
+
         setIsLoading(false)
-        return { success: false, error: "Email already exists" }
+        return { success: true, error: null }
       }
 
-      try {
-        // Try to check if email exists in Firestore
-        const usersRef = collection(db, "users")
-        const q = query(usersRef, where("email", "==", userData.email.toLowerCase()))
-        const querySnapshot = await getDocs(q)
+      // Save user to localStorage and state
+      const userWithPassword = { ...result.user, password: userData.password }
+      saveUserToLocalStorage(userWithPassword)
+      saveRegisteredUser(userWithPassword)
+      setUser(userWithPassword)
 
-        if (!querySnapshot.empty) {
-          setIsLoading(false)
-          return { success: false, error: "Email already exists" }
-        }
-      } catch (error: any) {
-        // If permission denied, continue with local storage approach
-        if (error.code !== "permission-denied") {
-          throw error
-        }
-      }
-
-      // Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password)
-      const firebaseUser = userCredential.user
-
-      // Generate mentor ID
-      const mentorId = generateMentorId()
-
-      // Create user object - set approved to true by default
-      const newUser: User = {
-        id: firebaseUser.uid,
-        mentorId,
-        email: userData.email.toLowerCase(),
-        name: userData.name,
-        displayName: userData.displayName,
-        phone: userData.phone || "",
-        approved: true, // Auto-approve users
-        isAdmin: false,
-        createdAt: new Date(),
-      }
-
-      try {
-        // Try to save to Firestore
-        await setDoc(doc(db, "users", firebaseUser.uid), newUser)
-      } catch (error: any) {
-        // If permission denied, save to localStorage instead
-        if (error.code === "permission-denied") {
-          saveUserToLocalStorage(newUser)
-        } else {
-          throw error
-        }
-      }
-
-      // No need to sign out after registration - let them stay logged in
-      setUser(newUser)
       setIsLoading(false)
       return { success: true, error: null }
     } catch (error: any) {
       console.error("Signup error:", error)
       setIsLoading(false)
-
-      // Provide more specific error messages based on Firebase error codes
-      if (error.code === "auth/email-already-in-use") {
-        return { success: false, error: "Email is already in use" }
-      } else if (error.code === "auth/invalid-email") {
-        return { success: false, error: "Invalid email format" }
-      } else if (error.code === "auth/weak-password") {
-        return { success: false, error: "Password is too weak" }
-      } else if (error.code === "permission-denied") {
-        return { success: false, error: "Permission denied. Please contact the administrator." }
-      } else {
-        return { success: false, error: error.message || "Registration failed" }
-      }
+      return { success: false, error: error.message || "Registration failed" }
     }
   }
 
+  // Enhance the login function with better error handling and debugging
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      // Sign in with Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      const firebaseUser = userCredential.user
+      console.log(`Attempting to login user: ${email}`)
+      const authenticatedUser = await authenticateUser(email, password)
 
-      try {
-        // Try to get user data from Firestore
-        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid))
+      if (!authenticatedUser) {
+        console.log(`Login failed for user: ${email}`)
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User
+        // Try fallback to localStorage
+        try {
+          const registeredUsers = localStorage.getItem(LOCAL_STORAGE_REGISTERED_USERS)
+          if (registeredUsers) {
+            const users = JSON.parse(registeredUsers)
+            const localUser = users.find(
+              (u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password,
+            )
 
-          // Auto-approve the user if they're not already approved
-          if (!userData.approved) {
-            userData.approved = true
-            try {
-              await updateDoc(doc(db, "users", firebaseUser.uid), { approved: true })
-            } catch (error) {
-              console.error("Error updating approval status:", error)
-            }
-          }
-
-          setUser(userData)
-          // Save to localStorage for cross-browser consistency
-          saveUserToLocalStorage(userData)
-          setIsLoading(false)
-          return { success: true, error: null }
-        }
-      } catch (error: any) {
-        // If permission denied, try localStorage
-        if (error.code === "permission-denied") {
-          const localUser = getUserFromLocalStorage(firebaseUser.uid)
-
-          if (localUser) {
-            // Auto-approve the user if they're not already approved
-            if (!localUser.approved) {
-              localUser.approved = true
+            if (localUser) {
+              console.log(`Found user in localStorage fallback: ${email}`)
               saveUserToLocalStorage(localUser)
+              setUser(localUser)
+              setIsLoading(false)
+              return { success: true, error: null }
+            } else {
+              console.log(`User not found in localStorage fallback or password mismatch: ${email}`)
             }
-
-            setUser(localUser)
-            setIsLoading(false)
-            return { success: true, error: null }
           }
-        } else {
-          throw error
+        } catch (e) {
+          console.error("Error checking localStorage fallback:", e)
         }
+
+        setIsLoading(false)
+        return { success: false, error: "Invalid email or password" }
       }
 
-      // If we get here, user exists in Auth but not in Firestore or localStorage
-      // Create a new user record
-      const newUser: User = {
-        id: firebaseUser.uid,
-        mentorId: generateMentorId(),
-        email: email.toLowerCase(),
-        name: firebaseUser.displayName || email.split("@")[0],
-        displayName: firebaseUser.displayName || email.split("@")[0],
-        phone: "",
-        approved: true,
-        isAdmin: false,
-        createdAt: new Date(),
-      }
+      // Save user to localStorage and state
+      console.log(`Login successful for user: ${email}`)
+      saveUserToLocalStorage(authenticatedUser)
+      setUser(authenticatedUser)
 
-      try {
-        await setDoc(doc(db, "users", firebaseUser.uid), newUser)
-      } catch (error) {
-        console.error("Error creating user in Firestore:", error)
-      }
-
-      saveUserToLocalStorage(newUser)
-      setUser(newUser)
       setIsLoading(false)
       return { success: true, error: null }
     } catch (error: any) {
       console.error("Login error:", error)
       setIsLoading(false)
-
-      // Provide more specific error messages based on Firebase error codes
-      if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
-        return { success: false, error: "Invalid email or password" }
-      } else if (error.code === "auth/too-many-requests") {
-        return { success: false, error: "Too many failed login attempts. Please try again later." }
-      } else if (error.code === "auth/user-disabled") {
-        return { success: false, error: "This account has been disabled." }
-      } else if (error.code === "permission-denied") {
-        return { success: false, error: "Permission denied. Please contact the administrator." }
-      } else {
-        return { success: false, error: "Login failed. Please try again." }
-      }
+      return { success: false, error: error.message || "Login failed" }
     }
   }
 
@@ -369,53 +224,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return false
 
     try {
-      // If avatar is included, check its size
-      if (userData.avatar) {
-        // Check if the avatar is too large (over 900KB)
-        const base64Length = userData.avatar.length - (userData.avatar.indexOf(",") + 1)
-        const sizeInBytes = (base64Length * 3) / 4
+      const success = await updateUserProfile(user.id, userData)
 
-        if (sizeInBytes > 900000) {
-          console.error("Avatar image is too large:", sizeInBytes, "bytes")
-          return false
-        }
-      }
+      if (success) {
+        // Update local user data
+        const updatedUser = { ...user, ...userData }
+        saveUserToLocalStorage(updatedUser)
 
-      // Create updated user object
-      const updatedUser = { ...user, ...userData }
-
-      // Update in Firestore
-      try {
-        const userRef = doc(db, "users", user.id)
-        await updateDoc(userRef, {
-          ...userData,
-          updatedAt: serverTimestamp(),
-        })
-      } catch (error: any) {
-        console.error("Error updating in Firestore:", error)
-        // If permission denied, only update in localStorage
-        if (error.code !== "permission-denied") {
-          throw error
-        }
-      }
-
-      // Always update in localStorage for cross-browser consistency
-      saveUserToLocalStorage(updatedUser)
-
-      // Update display name in Firebase Auth if provided
-      if (userData.displayName && auth.currentUser) {
+        // Also update in registered users if it exists
         try {
-          await updateFirebaseProfile(auth.currentUser, {
-            displayName: userData.displayName,
-          })
-        } catch (error) {
-          console.error("Error updating Firebase profile:", error)
+          const registeredUsers = localStorage.getItem(LOCAL_STORAGE_REGISTERED_USERS)
+          if (registeredUsers) {
+            const users = JSON.parse(registeredUsers)
+            const userIndex = users.findIndex((u: any) => u.id === user.id)
+            if (userIndex >= 0) {
+              users[userIndex] = { ...users[userIndex], ...userData }
+              localStorage.setItem(LOCAL_STORAGE_REGISTERED_USERS, JSON.stringify(users))
+            }
+          }
+        } catch (e) {
+          console.error("Error updating registered user:", e)
         }
+
+        setUser(updatedUser)
+        return true
       }
 
-      // Update local state
-      setUser(updatedUser)
-      return true
+      return false
     } catch (error) {
       console.error("Update profile error:", error)
       return false
@@ -424,7 +259,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await signOut(auth)
+      // Clear user from localStorage and state
+      localStorage.removeItem(LOCAL_STORAGE_USER_KEY)
       setUser(null)
       router.push("/login")
     } catch (error) {
@@ -454,5 +290,11 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
+}
+
+// Fix the generateMentorId function at the bottom of the file
+function generateMentorId(): number {
+  // Generate a random 6-digit number for the mentor ID
+  return Math.floor(100000 + Math.random() * 900000)
 }
 

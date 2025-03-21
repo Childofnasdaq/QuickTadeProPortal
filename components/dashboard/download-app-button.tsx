@@ -11,10 +11,21 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export function DownloadAppButton() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const router = useRouter()
+
+  const handleYocoPayment = () => {
+    setPaymentDialogOpen(false)
+    router.push("/yoco-payment")
+  }
+
+  const handleCreditCardPayment = () => {
+    setPaymentDialogOpen(false)
+    router.push("/payment")
+  }
 
   return (
     <>
@@ -32,27 +43,20 @@ export function DownloadAppButton() {
         <DialogContent className="bg-black border border-red-500 text-white">
           <DialogHeader>
             <DialogTitle className="text-red-500 text-xl">Download QUICKTRADE PRO</DialogTitle>
-            <DialogDescription className="text-red-300">Purchase the app for $60 USD</DialogDescription>
+            <DialogDescription className="text-red-300">Purchase the app for R1100</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-4">
-              <Button asChild className="bg-[#0b2e82] hover:bg-[#0a2971] text-white font-bold">
-                <a
-                  href="https://www.payfast.co.za/eng/process?cmd=_paynow&receiver=27246195&item_name=QUICKTRADE+PRO&amount=60&return_url=https://childofnasdaqofficial.co.za/payment-success&cancel_url=https://childofnasdaqofficial.co.za/payment-cancel"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Pay with PayFast
-                </a>
+              <Button className="bg-[#0F1A4F] hover:bg-[#1a2a6c] text-white font-bold" onClick={handleYocoPayment}>
+                Pay with Yoco
               </Button>
 
               <Button
-                asChild
                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold"
-                onClick={() => setPaymentDialogOpen(false)}
+                onClick={handleCreditCardPayment}
               >
-                <Link href="/payment">Pay with Credit Card</Link>
+                Pay with Credit Card
               </Button>
             </div>
           </div>
