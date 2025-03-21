@@ -91,6 +91,13 @@ export default function ProfilePage() {
       }
       reader.readAsDataURL(file)
 
+      // Check file size before processing
+      if (file.size > 2 * 1024 * 1024) {
+        // 2MB limit
+        setError("Image is too large. Please select an image smaller than 2MB.")
+        return
+      }
+
       // Resize and compress the image
       resizeImage(file, 200, 200)
         .then((resizedImage) => {
@@ -99,8 +106,11 @@ export default function ProfilePage() {
           updateProfile({ avatar: resizedImage })
             .then((success) => {
               if (!success) {
-                setError("Failed to upload image. Please try a smaller image.")
+                setError("Failed to upload image. Please try again.")
                 setPreviewImage(user?.avatar || null)
+              } else {
+                setSuccess(true)
+                setTimeout(() => setSuccess(false), 3000)
               }
               setIsLoading(false)
             })
@@ -113,7 +123,7 @@ export default function ProfilePage() {
         })
         .catch((err) => {
           console.error("Error resizing image:", err)
-          setError("Failed to process image. Please try a smaller image.")
+          setError("Failed to process image. Please try a smaller image or a different format (JPG, PNG).")
           setPreviewImage(user?.avatar || null)
         })
     } catch (error) {
@@ -123,7 +133,7 @@ export default function ProfilePage() {
     }
   }
 
-  // Function to resize and compress image
+  // Improved function to resize and compress image
   const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image()
@@ -156,8 +166,22 @@ export default function ProfilePage() {
 
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Convert to base64 with reduced quality
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.4) // Reduced quality to 40%
+        // Try different quality settings and formats to get a smaller file
+        let dataUrl = canvas.toDataURL("image/jpeg", 0.7) // Start with 70% quality JPEG
+        let fileSize = dataUrl.length * 0.75 // Rough estimate of base64 size in bytes
+
+        // If still too large, try with lower quality
+        if (fileSize > 500 * 1024) {
+          // If larger than 500KB
+          dataUrl = canvas.toDataURL("image/jpeg", 0.5) // Try 50% quality
+        }
+
+        // If still too large, try with even lower quality
+        fileSize = dataUrl.length * 0.75
+        if (fileSize > 500 * 1024) {
+          dataUrl = canvas.toDataURL("image/jpeg", 0.3) // Try 30% quality
+        }
+
         resolve(dataUrl)
       }
 
@@ -216,14 +240,17 @@ export default function ProfilePage() {
                 }}
               />
             </div>
-            <Button
-              variant="outline"
-              className="border-red-500 text-red-400 hover:bg-red-950"
-              onClick={handleLogoClick}
-              disabled={isLoading}
-            >
-              {isLoading ? "Uploading..." : "Upload The Logo"}
-            </Button>
+            <div className="flex flex-col space-y-2">
+              <Button
+                variant="outline"
+                className="border-red-500 text-red-400 hover:bg-red-950"
+                onClick={handleLogoClick}
+                disabled={isLoading}
+              >
+                {isLoading ? "Uploading..." : "Upload The Logo"}
+              </Button>
+              <p className="text-xs text-red-400">Max size: 2MB. Recommended: 200x200px.</p>
+            </div>
           </div>
         </div>
 

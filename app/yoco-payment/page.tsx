@@ -32,7 +32,7 @@ export default function YocoPaymentPage() {
     setIsProcessing(true)
     setError("")
 
-    // Initialize the Yoco SDK with your public key
+    // Initialize the Yoco SDK with the live public key
     const yoco = new window.YocoSDK({
       publicKey: "pk_live_4d1ec9c3lW1VJvZ21724",
     })
@@ -41,8 +41,8 @@ export default function YocoPaymentPage() {
     yoco.showPopup({
       amountInCents: 110000, // R1100 in cents
       currency: "ZAR",
-      name: "QUICKTRADE PRO",
-      description: "Trading Platform License",
+      name: "QuickTradePro App",
+      description: "Trading Platform App License",
       callback: (result) => {
         // This function gets called after the popup is closed
         if (result.error) {
@@ -53,6 +53,9 @@ export default function YocoPaymentPage() {
           // In a real implementation, you would send this token to your server
           // to complete the payment using the secret key
           console.log("Card successfully tokenized:", result.id)
+
+          // For a complete implementation, you would make a server call here:
+          // processPayment(result.id)
 
           // For demo purposes, we'll simulate a successful payment
           setTimeout(() => {
@@ -90,7 +93,7 @@ export default function YocoPaymentPage() {
           <CardHeader>
             <CardTitle className="text-2xl text-red-500 neon-text">Yoco Payment</CardTitle>
             <CardDescription className="text-red-300">
-              Complete your purchase of QUICKTRADE PRO for R1100
+              Complete your purchase of QuickTradePro App for R1100
             </CardDescription>
           </CardHeader>
 
@@ -111,7 +114,7 @@ export default function YocoPaymentPage() {
                 <div className="bg-black/80 border border-red-500/30 rounded-lg p-4">
                   <div className="flex justify-between mb-2">
                     <span className="text-red-300">Product:</span>
-                    <span className="text-white">QUICKTRADE PRO License</span>
+                    <span className="text-white">QuickTradePro App</span>
                   </div>
                   <div className="flex justify-between mb-2">
                     <span className="text-red-300">Price:</span>

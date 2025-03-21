@@ -43,6 +43,10 @@ const testimonials = [
 export default function LandingPage() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
 
+  const handleDownloadButtonClick = () => {
+    setPaymentDialogOpen(true)
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -80,7 +84,7 @@ export default function LandingPage() {
                   <Button
                     size="lg"
                     className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all hover:shadow-red-500/50"
-                    onClick={() => setPaymentDialogOpen(true)}
+                    onClick={handleDownloadButtonClick}
                   >
                     Download App ($60 / R1100)
                   </Button>
@@ -166,11 +170,11 @@ export default function LandingPage() {
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-4">
               <Button asChild className="bg-[#0F1A4F] hover:bg-[#1a2a6c] text-white font-bold">
-                <a href="/yoco-payment">Pay with Yoco</a>
+                <Link href="/yoco-payment">Pay with Yoco</Link>
               </Button>
 
               <Button
-                onClick={() => setPaymentDialogOpen(false)}
+                asChild
                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold"
               >
                 <Link href="/payment">Pay with Credit Card</Link>

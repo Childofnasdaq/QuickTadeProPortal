@@ -126,7 +126,7 @@ export default function PaymentPage() {
 
       // Redirect after successful payment
       setTimeout(() => {
-        router.push("/dashboard")
+        router.push("/payment-success")
       }, 3000)
     } catch (error) {
       console.error("Payment error:", error)
@@ -158,7 +158,7 @@ export default function PaymentPage() {
           <CardHeader>
             <CardTitle className="text-2xl text-red-500 neon-text">Credit Card Payment</CardTitle>
             <CardDescription className="text-red-300">
-              Complete your purchase of QUICKTRADE PRO for $60 USD / R1100
+              Complete your purchase of QuickTradePro App for R1100
             </CardDescription>
           </CardHeader>
 
@@ -307,7 +307,7 @@ export default function PaymentPage() {
                   className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Processing..." : "Pay $60.00 USD / R1100.00"}
+                  {isSubmitting ? "Processing..." : "Pay R1100.00"}
                 </Button>
               </form>
             )}

@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Clipboard, CheckCircle, RefreshCw, Users, Award } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { Progress } from "@/components/ui/progress"
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 type Referral = {
@@ -55,26 +53,9 @@ export default function RewardsPage() {
         localStorage.setItem(`referral_link_${user?.id}`, generatedLink)
       }
 
-      // Try to fetch referrals from Firestore
-      let referralData: Referral[] = []
-
-      try {
-        const referralsRef = collection(db, "referrals")
-        const q = query(referralsRef, where("referredBy", "==", user?.id))
-        const querySnapshot = await getDocs(q)
-
-        referralData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        })) as Referral[]
-      } catch (error) {
-        console.error("Error fetching referrals:", error)
-
-        // Fallback to localStorage
-        const storedReferrals = JSON.parse(localStorage.getItem(`referrals_${user?.id}`) || "[]")
-        referralData = storedReferrals
-      }
+      // Try to fetch referrals from localStorage
+      const storedReferrals = JSON.parse(localStorage.getItem(`referrals_${user?.id}`) || "[]")
+      const referralData = storedReferrals
 
       // Calculate stats
       const totalReferrals = referralData.length
@@ -110,19 +91,7 @@ export default function RewardsPage() {
       // Create the new referral link
       const newLink = `https://childofnasdaqofficial.co.za/signup?ref=${uniqueCode}`
 
-      // Save to Firestore if possible
-      try {
-        await addDoc(collection(db, "referralLinks"), {
-          userId: user.id,
-          code: uniqueCode,
-          link: newLink,
-          createdAt: serverTimestamp(),
-        })
-      } catch (error) {
-        console.error("Error saving to Firestore:", error)
-      }
-
-      // Always save to localStorage as backup
+      // Save to localStorage
       localStorage.setItem(`referral_link_${user.id}`, newLink)
 
       // Update state

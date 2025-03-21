@@ -34,7 +34,7 @@ export default function PaymentSuccessPage() {
         <div className="bg-black border border-green-500 rounded-lg p-8 shadow-lg">
           <h1 className="text-2xl font-bold text-green-400 mb-4">Payment Successful!</h1>
           <p className="text-green-300 mb-6">
-            Thank you for your purchase of QUICKTRADE PRO ($60 / R1100). Your download link has been sent to your email.
+            Thank you for your purchase of QuickTradePro App (R1100). Your download link has been sent to your email.
           </p>
           <p className="text-red-300 mb-8">You will be redirected to the dashboard in a few seconds...</p>
 

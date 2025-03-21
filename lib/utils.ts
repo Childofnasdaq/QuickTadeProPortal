@@ -1,44 +1,17 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
-export function formatDate(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
-}
-
-export function getPlanDisplayName(plan: string): string {
-  const planMap: Record<string, string> = {
-    "3days": "3 Days",
-    "5days": "5 Days",
-    "30days": "30 Days",
-    "3months": "3 Months",
-    "6months": "6 Months",
-    "1year": "1 Year",
-    lifetime: "Lifetime",
-  }
-
-  return planMap[plan] || plan
+export function generateMentorId(): number {
+  // Generate a random 6-digit number for the mentor ID
+  return Math.floor(100000 + Math.random() * 900000)
 }
 
 export function generateLicenseKey(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let key = ""
-
-  // Generate 5 groups of 5 characters separated by hyphens
-  for (let i = 0; i < 5; i++) {
-    for (let j = 0; j < 5; j++) {
-      key += chars.charAt(Math.floor(Math.random() * chars.length))
+  for (let i = 0; i < 16; i++) {
+    if (i > 0 && i % 4 === 0) {
+      key += "-"
     }
-    if (i < 4) key += "-"
+    key += characters.charAt(Math.floor(Math.random() * characters.length))
   }
-
   return key
 }
 
@@ -64,21 +37,43 @@ export function calculateExpiryDate(plan: string, startDate: Date): Date {
     case "1year":
       expiryDate.setFullYear(expiryDate.getFullYear() + 1)
       break
-    case "lifetime":
-      // Set to a far future date for "lifetime" (e.g., 100 years)
-      expiryDate.setFullYear(expiryDate.getFullYear() + 100)
-      break
     default:
-      // Default to 30 days if plan is not recognized
-      expiryDate.setDate(expiryDate.getDate() + 30)
+      break
   }
 
   return expiryDate
 }
 
-// Generate a unique mentor ID (6-digit number)
-export function generateMentorId(): number {
-  // Generate a random 6-digit number between 100000 and 999999
-  return Math.floor(100000 + Math.random() * 900000)
+export function getPlanDisplayName(plan: string): string {
+  switch (plan) {
+    case "3days":
+      return "3 Days"
+    case "5days":
+      return "5 Days"
+    case "30days":
+      return "30 Days"
+    case "3months":
+      return "3 Months"
+    case "6months":
+      return "6 Months"
+    case "1year":
+      return "1 Year"
+    case "lifetime":
+      return "Lifetime"
+    default:
+      return "Unknown Plan"
+  }
+}
+
+export function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  })
+}
+
+export function cn(...inputs: any[]): string {
+  return inputs.filter(Boolean).join(" ")
 }
 
