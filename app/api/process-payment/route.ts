@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 // IMPORTANT: Never expose this key in client-side code
-const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY
+const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY || "sk_live_7f795574aZEv9bPe8de4c63b0d69"
 
 export async function POST(request: Request) {
   try {
