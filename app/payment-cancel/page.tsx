@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle } from 'lucide-react'
 
 export default function PaymentCancelPage() {
   const router = useRouter()
@@ -43,11 +43,11 @@ export default function PaymentCancelPage() {
 
           <div className="flex flex-col gap-4">
             <Button asChild className="bg-red-600 hover:bg-red-700 text-white">
-              <Link href="/">Return to Home</Link>
+              <Link href="/yoco-payment">Try Payment Again</Link>
             </Button>
 
             <Button asChild variant="outline" className="border-red-500 text-red-400 hover:bg-red-950">
-              <Link href="/payment">Try Again</Link>
+              <Link href="/">Return to Home</Link>
             </Button>
           </div>
         </div>
@@ -55,4 +55,3 @@ export default function PaymentCancelPage() {
     </div>
   )
 }
-
