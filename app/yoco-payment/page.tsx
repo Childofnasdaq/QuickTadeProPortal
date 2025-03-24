@@ -6,7 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
+import { Loader2, Clock } from "lucide-react"
 import Script from "next/script"
 
 export default function YocoPaymentPage() {
@@ -34,7 +34,7 @@ export default function YocoPaymentPage() {
 
     // Initialize the Yoco SDK with the live public key
     const yoco = new window.YocoSDK({
-      publicKey: "pk_live_4d1ec9c3lW1VJvZ21724",
+      publicKey: "pk_live_4d1ec9c3lW1VJvZ21724", // Live key
     })
 
     // Create a new payment
@@ -43,24 +43,44 @@ export default function YocoPaymentPage() {
       currency: "ZAR",
       name: "QuickTradePro App",
       description: "Trading Platform App License",
-      callback: (result) => {
+      callback: async (result) => {
         // This function gets called after the popup is closed
         if (result.error) {
           setError(result.error.message)
           setIsProcessing(false)
         } else {
-          // Card successfully tokenized
-          // In a real implementation, you would send this token to your server
-          // to complete the payment using the secret key
-          console.log("Card successfully tokenized:", result.id)
+          try {
+            // Send the token to our server to complete the payment
+            const response = await fetch("/api/process-payment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                token: result.id,
+                email: "customer@example.com", // Ideally collect this from the user
+              }),
+            })
 
-          // For a complete implementation, you would make a server call here:
-          // processPayment(result.id)
+            const data = await response.json()
 
-          // For demo purposes, we'll simulate a successful payment
-          setTimeout(() => {
-            router.push("/payment-success")
-          }, 1000)
+            if (data.success) {
+              // Payment was successfully processed
+              router.push("/payment-success")
+            } else {
+              // Payment processing failed
+              setError(data.error || "Payment failed. Please try again.")
+              setIsProcessing(false)
+              // Redirect to cancel page for declined payments
+              router.push("/payment-cancel")
+            }
+          } catch (error) {
+            console.error("Error processing payment:", error)
+            setError("Payment processing failed. Please try again.")
+            setIsProcessing(false)
+            // Redirect to cancel page for errors
+            router.push("/payment-cancel")
+          }
         }
       },
     })
@@ -93,7 +113,11 @@ export default function YocoPaymentPage() {
           <CardHeader>
             <CardTitle className="text-2xl text-red-500 neon-text">Yoco Payment</CardTitle>
             <CardDescription className="text-red-300">
-              Complete your purchase of QuickTradePro App for R1100
+              <span className="block mb-2">Complete your purchase of QuickTradePro App for R1100</span>
+              <span className="text-yellow-400 text-sm flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                Special offer until April 25, 2025 (R2000 after)
+              </span>
             </CardDescription>
           </CardHeader>
 
@@ -119,6 +143,10 @@ export default function YocoPaymentPage() {
                   <div className="flex justify-between mb-2">
                     <span className="text-red-300">Price:</span>
                     <span className="text-white font-bold">R1100.00</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-yellow-400">Limited Time Offer:</span>
+                    <span className="text-yellow-400">Until April 25, 2025</span>
                   </div>
                 </div>
 

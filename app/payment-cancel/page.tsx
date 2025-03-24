@@ -34,9 +34,10 @@ export default function PaymentCancelPage() {
 
         <div className="bg-black border border-red-500 rounded-lg p-8 shadow-lg">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-red-400 mb-4">Payment Cancelled</h1>
+          <h1 className="text-2xl font-bold text-red-400 mb-4">Payment Unsuccessful</h1>
           <p className="text-red-300 mb-6">
-            Your payment for QUICKTRADE PRO was cancelled. No charges have been made to your account.
+            Your payment for QUICKTRADE PRO was not successful. This could be due to insufficient funds, a declined
+            card, or another payment issue. No charges have been made to your account.
           </p>
           <p className="text-gray-400 mb-8">You will be redirected to the home page in a few seconds...</p>
 

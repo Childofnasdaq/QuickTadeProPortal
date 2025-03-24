@@ -65,8 +65,8 @@
     "@mongodb-js/zstd": "latest",
     "mongodb-client-encryption": "latest",
     "@aws-sdk/credential-providers": "latest",
-    "react-icons": "latest",
-    "mongodb": "latest"
+    "mongodb": "latest",
+    "react-icons": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

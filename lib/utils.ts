@@ -1,17 +1,28 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
 export function generateMentorId(): number {
   // Generate a random 6-digit number for the mentor ID
   return Math.floor(100000 + Math.random() * 900000)
 }
 
 export function generateLicenseKey(): string {
+  // Generate a license key in the format: XXXX-XXXX-XXXX-XXXX
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let key = ""
-  for (let i = 0; i < 16; i++) {
-    if (i > 0 && i % 4 === 0) {
+
+  // Generate 4 groups of 4 characters
+  for (let group = 0; group < 4; group++) {
+    for (let i = 0; i < 4; i++) {
+      key += characters.charAt(Math.floor(Math.random() * characters.length))
+    }
+
+    // Add hyphen between groups (except after the last group)
+    if (group < 3) {
       key += "-"
     }
-    key += characters.charAt(Math.floor(Math.random() * characters.length))
   }
+
   return key
 }
 
@@ -66,14 +77,20 @@ export function getPlanDisplayName(plan: string): string {
 }
 
 export function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  })
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
-export function cn(...inputs: any[]): string {
-  return inputs.filter(Boolean).join(" ")
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export function getLicenseStatus(licenseKey: string): "active" | "used" {
+  // This is a placeholder function that would normally check against a database
+  // For now, we'll just return a random status for demonstration
+  return Math.random() > 0.5 ? "active" : "used"
 }
 

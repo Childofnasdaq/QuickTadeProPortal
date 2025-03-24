@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronRight, Star, ExternalLink } from "lucide-react"
+import { ChevronRight, Star, ExternalLink, Clock } from "lucide-react"
 import { FaWhatsapp, FaInstagram, FaFacebook, FaTiktok } from "react-icons/fa"
 import { LiveChat } from "@/components/live-chat"
 import { FaTelegram } from "react-icons/fa6"
@@ -42,6 +42,8 @@ const testimonials = [
 
 export default function LandingPage() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const downloadLink =
+    "https://upload.app/api/download?sha256=275f56f6d7e81e1cc65cfbddedd48cd679b0a85f11a357d52f6019993cd3a0d8&download_id=upload_57735465-aa8e-4ead-bb5f-0eedcd365961&token=9ffa97510e06f02d5a9e639824dadddc67e1cde1"
 
   const handleDownloadButtonClick = () => {
     setPaymentDialogOpen(true)
@@ -64,6 +66,16 @@ export default function LandingPage() {
               />
               <h1 className="text-4xl md:text-6xl font-bold mb-6 text-red-500 neon-text">QUICKTRADE PRO</h1>
               <p className="text-xl md:text-2xl mb-8 text-red-200">Professional Trading License Management Platform</p>
+
+              {/* Special Offer Banner */}
+              <div className="bg-red-900/30 border border-red-500 rounded-lg p-4 mb-6 inline-block">
+                <div className="flex items-center">
+                  <Clock className="h-5 w-5 text-red-400 mr-2" />
+                  <span className="text-red-300 font-medium">Special Offer: R1100 until April 25, 2025</span>
+                </div>
+                <p className="text-red-400 text-sm mt-1">Price increases to R2000 after this date</p>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 {/* Updated button container with max-width */}
                 <div className="max-w-sm mx-auto lg:mx-0 flex flex-col sm:flex-row gap-4">
@@ -163,21 +175,20 @@ export default function LandingPage() {
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
         <DialogContent className="bg-black border border-red-500 text-white">
           <DialogHeader>
-            <DialogTitle className="text-red-500 text-xl">Choose Payment Method</DialogTitle>
-            <DialogDescription className="text-red-300">Purchase QUICKTRADE PRO for $60 USD / R1100</DialogDescription>
+            <DialogTitle className="text-red-500 text-xl">Download QUICKTRADE PRO</DialogTitle>
+            <DialogDescription className="text-red-300">
+              <span className="block mb-2">Purchase the app for R1100</span>
+              <span className="text-yellow-400 text-sm flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                Special offer until April 25, 2025 (R2000 after)
+              </span>
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-4">
               <Button asChild className="bg-[#0F1A4F] hover:bg-[#1a2a6c] text-white font-bold">
                 <Link href="/yoco-payment">Pay with Yoco</Link>
-              </Button>
-
-              <Button
-                asChild
-                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold"
-              >
-                <Link href="/payment">Pay with Credit Card</Link>
               </Button>
             </div>
           </div>
