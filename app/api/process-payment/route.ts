@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-// IMPORTANT: Never expose this key in client-side code
+// Use environment variable with fallback to the provided secret key
 const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY || "sk_live_7f795574aZEv9bPe8de4c63b0d69"
 
 export async function POST(request: Request) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const response = await fetch("https://online.yoco.com/v1/charges/", {
       method: "POST",
       headers: {
-        "X-Auth-Secret-Key": YOCO_SECRET_KEY || "",
+        "X-Auth-Secret-Key": YOCO_SECRET_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

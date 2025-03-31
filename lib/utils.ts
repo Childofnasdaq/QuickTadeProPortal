@@ -1,24 +1,19 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-
 export function generateMentorId(): number {
   // Generate a random 6-digit number for the mentor ID
   return Math.floor(100000 + Math.random() * 900000)
 }
 
 export function generateLicenseKey(): string {
-  // Generate a license key in the format: XXXX-XXXX-XXXX-XXXX
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let key = ""
 
-  // Generate 4 groups of 4 characters
-  for (let group = 0; group < 4; group++) {
-    for (let i = 0; i < 4; i++) {
-      key += characters.charAt(Math.floor(Math.random() * characters.length))
+  for (let i = 0; i < 4; i++) {
+    let segment = ""
+    for (let j = 0; j < 4; j++) {
+      segment += characters.charAt(Math.floor(Math.random() * characters.length))
     }
-
-    // Add hyphen between groups (except after the last group)
-    if (group < 3) {
+    key += segment
+    if (i < 3) {
       key += "-"
     }
   }
@@ -55,6 +50,20 @@ export function calculateExpiryDate(plan: string, startDate: Date): Date {
   return expiryDate
 }
 
+export function getLicenseStatus(licenseKey: string): "active" | "used" | null {
+  // Simulate checking the license status
+  // In a real application, this would involve querying a database or external service
+
+  // For demonstration purposes, we'll just return "active" if the key starts with "ACT"
+  if (licenseKey.startsWith("ACT")) {
+    return "active"
+  } else if (licenseKey.startsWith("USED")) {
+    return "used"
+  }
+
+  return null
+}
+
 export function getPlanDisplayName(plan: string): string {
   switch (plan) {
     case "3days":
@@ -72,25 +81,19 @@ export function getPlanDisplayName(plan: string): string {
     case "lifetime":
       return "Lifetime"
     default:
-      return "Unknown Plan"
+      return plan
   }
 }
 
 export function formatDate(date: Date): string {
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, "0")
-  const day = String(d.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  })
 }
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
-export function getLicenseStatus(licenseKey: string): "active" | "used" {
-  // This is a placeholder function that would normally check against a database
-  // For now, we'll just return a random status for demonstration
-  return Math.random() > 0.5 ? "active" : "used"
+export function cn(...inputs: any[]): string {
+  return inputs.filter(Boolean).join(" ")
 }
 

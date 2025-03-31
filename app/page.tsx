@@ -190,6 +190,19 @@ export default function LandingPage() {
               <Button asChild className="bg-[#0F1A4F] hover:bg-[#1a2a6c] text-white font-bold">
                 <Link href="/yoco-payment">Pay with Yoco</Link>
               </Button>
+
+              <div className="flex justify-center">
+                <a
+                  href="https://nowpayments.io/payment/?iid=4539962813&source=button"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  <img
+                    src="https://nowpayments.io/images/embeds/payment-button-black.svg"
+                    alt="Crypto payment button by NOWPayments"
+                  />
+                </a>
+              </div>
             </div>
           </div>
 
