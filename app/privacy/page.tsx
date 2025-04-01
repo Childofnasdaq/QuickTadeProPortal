@@ -120,7 +120,7 @@ export default function PrivacyPage() {
                 If you have questions or concerns about this Privacy Policy, please contact us:
               </p>
               <ul className="list-disc pl-6 text-gray-300 space-y-2">
-                <li>Email: support@childofnasdaqofficial.co.za.</li>
+                <li>Email: support@childofnasdaqofficial.co.za</li>
                 <li>WhatsApp: +27 695 347 219</li>
                 <li>We will respond to all inquiries within 48 hours</li>
               </ul>
