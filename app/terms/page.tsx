@@ -29,7 +29,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-xl font-bold text-red-400 mb-4">1. No Refund Policy</h2>
               <p className="text-gray-300 mb-3">
-                MobiTrade Pro maintains a strict no-refund policy. By using our services, you acknowledge and agree
+                QuickTrade Pro maintains a strict no-refund policy. By using our services, you acknowledge and agree
                 that:
               </p>
               <ul className="list-disc pl-6 text-gray-300 space-y-2">
